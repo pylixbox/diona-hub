@@ -6,6 +6,7 @@ import AlertsTable from '../components/AlertsTable'
 import AlertDrawer from '../components/AlertDrawer'
 import { api } from '../api/client'
 import { downloadCsv } from '../utils/csv'
+import { formatPhilippinesDate, formatPhilippinesTimestamp } from '../utils/time'
 
 const PER_PAGE = 20
 const SEVERITIES = [
@@ -59,10 +60,10 @@ export default function AlertsView() {
         pages = r.pages
         p += 1
       } while (p <= pages && rows.length < 2000)
-      downloadCsv(`diona-alerts-${new Date().toISOString().slice(0, 10)}.csv`, [
-        ['timestamp_utc', 'node', 'detection', 'source_ip', 'target_ip', 'severity', 'otx_pulses'],
+      downloadCsv(`diona-alerts-${formatPhilippinesDate(new Date())}.csv`, [
+        ['timestamp_pht', 'node', 'detection', 'source_ip', 'target_ip', 'severity', 'otx_pulses'],
         ...rows.map((a) => [
-          a.timestamp,
+          formatPhilippinesTimestamp(a.timestamp),
           a.node_name,
           a.attack_type,
           a.source_ip,

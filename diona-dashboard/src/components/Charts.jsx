@@ -12,11 +12,18 @@ import {
 } from 'recharts'
 import Panel from './Panel'
 import { useTheme } from '../context/ThemeContext'
+import { PHILIPPINES_TIME_ZONE } from '../utils/time'
 
 const ORDER = ['High', 'Medium', 'Low']
 
 const fmtDay = (d) =>
-  d ? new Date(`${d}T12:00:00Z`).toLocaleDateString([], { month: 'short', day: 'numeric', timeZone: 'UTC' }) : ''
+  d
+    ? new Date(`${d}T12:00:00+08:00`).toLocaleDateString('en-PH', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: PHILIPPINES_TIME_ZONE,
+      })
+    : ''
 
 export function SeverityChart({ data, days = 7 }) {
   const { colors } = useTheme()

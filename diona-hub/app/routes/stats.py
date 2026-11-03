@@ -6,6 +6,7 @@ from app.extensions import db
 from app.models import Alert
 
 bp = Blueprint("stats", __name__, url_prefix="/api/stats")
+PHILIPPINES_TIMEZONE = timezone(timedelta(hours=8), name="PHT")
 
 
 @bp.route("/summary", methods=["GET"])
@@ -54,19 +55,22 @@ def summary():
         or 0
     )
 
-    # Day x severity, zero-filled across the WHOLE window so the trend
-    # chart always shows every day, not just days that had alerts.
+    # Bucket timestamps by Philippine calendar date for the dashboard trend.
     raw = (
-        db.session.query(func.date(Alert.timestamp), Alert.severity_level, func.count(Alert.alert_id))
+        db.session.query(Alert.timestamp, Alert.severity_level)
         .filter(Alert.timestamp >= since)
-        .group_by(func.date(Alert.timestamp), Alert.severity_level)
         .all()
     )
     by_date = {}
-    for d, sev, c in raw:
-        by_date.setdefault(str(d), {"High": 0, "Medium": 0, "Low": 0})[sev] = c
+    for timestamp, severity in raw:
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        date_key = timestamp.astimezone(PHILIPPINES_TIMEZONE).date().isoformat()
+        counts = by_date.setdefault(date_key, {"High": 0, "Medium": 0, "Low": 0})
+        if severity in counts:
+            counts[severity] += 1
 
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(PHILIPPINES_TIMEZONE).date()
     by_day = []
     for offset in range(days - 1, -1, -1):
         date_str = (today - timedelta(days=offset)).isoformat()

@@ -9,6 +9,7 @@ import TopAttackers from '../components/TopAttackers'
 import RuleBreakdown from '../components/RuleBreakdown'
 import { SeverityChart, TrendChart } from '../components/Charts'
 import { api } from '../api/client'
+import { formatPhilippinesClock } from '../utils/time'
 
 const POLL_MS = 5000
 const EMPTY_STATS = {
@@ -60,7 +61,7 @@ export default function OverviewView({ onNavigate }) {
           subtitle={`East-West traffic seen by ${nodes.length} observer node(s)`}
           right={
             <p className="font-mono text-[11px] text-muted">
-              {updated ? `updated ${updated.toLocaleTimeString([], { hour12: false })}` : 'connecting…'}
+              {updated ? `updated ${formatPhilippinesClock(updated)}` : 'connecting…'}
             </p>
           }
         />

@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { RefreshCw, X } from 'lucide-react'
 import SeverityBadge from './SeverityBadge'
 import { formatStamp, timeAgo } from '../utils/time'
+import { api } from '../api/client'
 
 const ruleLabel = (t) => (t || '').replace(/^DIONA (Possible )?/, '')
 
@@ -39,7 +40,7 @@ function Intel({ alert }) {
   if (alert.otx_pulse_count == null)
     return (
       <p className="text-[13px] text-muted">
-        The OTX lookup did not run for this alert (no API key configured, or the request timed out).
+        No OTX result is saved for this alert. It may predate your API key or the earlier lookup may have failed.
       </p>
     )
   if (alert.otx_flagged)
@@ -56,13 +57,34 @@ function Intel({ alert }) {
 }
 
 export default function AlertDrawer({ alert: a, onClose }) {
+  const [displayAlert, setDisplayAlert] = useState(a)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState('')
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const advice = ADVICE.find((x) => x.match.test(a.attack_type || ''))
+  useEffect(() => {
+    setDisplayAlert(a)
+    setRetryError('')
+  }, [a])
+
+  const retryOtx = async () => {
+    setRetrying(true)
+    setRetryError('')
+    try {
+      setDisplayAlert(await api.enrichAlert(a.alert_id))
+    } catch (error) {
+      setRetryError(error.message)
+    } finally {
+      setRetrying(false)
+    }
+  }
+
+  const advice = ADVICE.find((x) => x.match.test(displayAlert.attack_type || ''))
 
   return (
     <>
@@ -71,8 +93,8 @@ export default function AlertDrawer({ alert: a, onClose }) {
         <header className="flex items-start justify-between gap-4 border-b border-line p-5">
           <div>
             <SeverityBadge level={a.severity_level} />
-            <h2 className="mt-2 text-lg font-semibold leading-snug text-ink">{ruleLabel(a.attack_type)}</h2>
-            <p className="mt-1 font-mono text-[11px] text-muted">alert #{a.alert_id}</p>
+            <h2 className="mt-2 text-lg font-semibold leading-snug text-ink">{ruleLabel(displayAlert.attack_type)}</h2>
+            <p className="mt-1 font-mono text-[11px] text-muted">alert #{displayAlert.alert_id}</p>
           </div>
           <button
             onClick={onClose}
@@ -86,19 +108,33 @@ export default function AlertDrawer({ alert: a, onClose }) {
         <div className="space-y-6 p-5">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
             <Field label="Detected">
-              {formatStamp(a.timestamp)}
-              <span className="block text-[11px] text-muted">{timeAgo(a.timestamp)}</span>
+              {formatStamp(displayAlert.timestamp)}
+              <span className="block text-[11px] text-muted">{timeAgo(displayAlert.timestamp)}</span>
             </Field>
-            <Field label="Observer node">{a.node_name}</Field>
-            <Field label="Source IP">{a.source_ip}</Field>
-            <Field label="Target IP">{a.target_ip || '—'}</Field>
+            <Field label="Observer node">{displayAlert.node_name}</Field>
+            <Field label="Source IP">{displayAlert.source_ip}</Field>
+            <Field label="Target IP">{displayAlert.target_ip || '—'}</Field>
           </dl>
 
           <section>
             <h3 className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted">Threat intelligence</h3>
-            <Intel alert={a} />
+            <Intel alert={displayAlert} />
+            {displayAlert.otx_pulse_count == null && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={retryOtx}
+                  disabled={retrying}
+                  className="inline-flex items-center gap-1.5 border border-line px-2.5 py-1.5 text-xs text-inkSoft transition-colors hover:border-amber hover:text-amber disabled:cursor-wait disabled:opacity-50"
+                >
+                  <RefreshCw size={13} className={retrying ? 'animate-spin' : ''} />
+                  {retrying ? 'Checking OTX…' : 'Retry OTX lookup'}
+                </button>
+                {retryError && <p role="alert" className="mt-2 text-xs text-severityHigh">{retryError}</p>}
+              </div>
+            )}
             <a
-              href={`https://otx.alienvault.com/indicator/ip/${a.source_ip}`}
+              href={`https://otx.alienvault.com/indicator/ip/${displayAlert.source_ip}`}
               target="_blank"
               rel="noreferrer"
               className="mt-2 inline-block text-[13px] text-amber hover:underline"

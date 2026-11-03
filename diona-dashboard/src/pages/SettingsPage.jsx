@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [status, setStatus] = useState('')
   const [testStatus, setTestStatus] = useState(null)
+  const [otxTestStatus, setOtxTestStatus] = useState(null)
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {})
@@ -38,6 +39,15 @@ export default function SettingsPage() {
       setTestStatus('ok')
     } catch (err) {
       setTestStatus(err.message || 'Test failed.')
+    }
+  }
+
+  const handleTestOtx = async () => {
+    setOtxTestStatus({ checking: true })
+    try {
+      setOtxTestStatus(await api.testOtx())
+    } catch (err) {
+      setOtxTestStatus({ error: err.message || 'OTX test failed.' })
     }
   }
 
@@ -88,6 +98,23 @@ export default function SettingsPage() {
               placeholder={settings?.otx_api_key?.configured ? 'Leave blank to keep current key' : 'your OTX API key'}
               className={INPUT}
             />
+            <p className="mt-2 text-xs text-muted">
+              Test uses public IP 8.8.8.8. A successful lookup with zero pulses still confirms the key works.
+            </p>
+            <button
+              type="button"
+              onClick={handleTestOtx}
+              disabled={otxTestStatus?.checking}
+              className="mt-3 border border-line px-3 py-1.5 text-xs text-inkSoft transition-colors hover:border-amber hover:text-amber disabled:cursor-wait disabled:opacity-50"
+            >
+              {otxTestStatus?.checking ? 'Checking OTX…' : 'Test OTX connection'}
+            </button>
+            {otxTestStatus?.pulse_count != null && (
+              <p role="status" className="mt-2 text-xs text-online">
+                OTX connection verified. {otxTestStatus.pulse_count} pulse(s) found for {otxTestStatus.test_ip}.
+              </p>
+            )}
+            {otxTestStatus?.error && <p role="alert" className="mt-2 text-xs text-severityHigh">{otxTestStatus.error}</p>}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">

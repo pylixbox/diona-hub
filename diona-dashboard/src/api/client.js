@@ -32,10 +32,12 @@ export const api = {
     const qs = new URLSearchParams(params).toString()
     return request(`/api/alerts${qs ? `?${qs}` : ''}`)
   },
+  enrichAlert: (alertId) => request(`/api/alerts/${alertId}/enrich`, { method: 'POST' }),
   getNodes: () => request('/api/nodes'),
   getStatsSummary: (days = 7) => request(`/api/stats/summary?days=${days}`),
   getTopSources: (days = 7) => request(`/api/stats/top-sources?days=${days}`),
   getSettings: () => request('/api/settings'),
   saveSettings: (payload) => request('/api/settings', { method: 'POST', body: JSON.stringify(payload) }),
   testTelegram: () => request('/api/settings/test-telegram', { method: 'POST' }),
+  testOtx: () => request('/api/settings/test-otx', { method: 'POST' }),
 }
