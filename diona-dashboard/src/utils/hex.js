@@ -1,0 +1,2 @@
+// Flat-top hexagon, usable as a CSS clip-path.
+export const HEX = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'
