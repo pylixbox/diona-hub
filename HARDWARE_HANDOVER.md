@@ -105,15 +105,24 @@ Implement a small adapter between the chosen Snort event output and the API cont
 
 `POST /api/alerts` and `POST /api/nodes/heartbeat` currently do not require sensor authentication. This is explicitly a development-phase limitation in the route code. Keep the hub on a trusted, firewalled LAN and do not expose port 5000 to the public Internet. The Flask debug server is for local development only. If the deployment needs to cross an untrusted network, pause and design sensor authentication and transport security before exposing these endpoints; do not invent an incompatible header or silently change the API.
 
-## Dashboard Account Setup
+## Dashboard Account and Demo Data Setup
 
-Dashboard accounts live in the hub's local SQLite database (`diona-hub/instance/diona.db` by default), which is intentionally excluded from Git. A fresh clone creates the database tables on startup but does not contain an admin user. To create or reset an account on each machine, activate the hub virtual environment, change to `diona-hub/`, then run:
+Dashboard accounts and integration settings live in the hub's local SQLite database (`diona-hub/instance/diona.db` by default). That working database is intentionally excluded from Git because it can contain password hashes and API keys. A fresh clone creates the database tables on startup but does not contain an admin user or old alerts.
+
+The repository includes `diona-hub/demo_data.db`, a sanitized snapshot containing the synthetic demo alerts and node only. To load it on a cloned machine, stop the hub, open PowerShell in `diona-hub/`, and run:
+
+```powershell
+New-Item -ItemType Directory -Force .\instance | Out-Null
+Copy-Item .\demo_data.db .\instance\diona.db -Force
+```
+
+Then activate the hub virtual environment and create a local admin account:
 
 ```powershell
 flask --app run:app set-admin-password --username admin
 ```
 
-The command prompts for the new password twice without echoing it and stores only a bcrypt hash. Omit `--username admin` to use the default. Do not add a default password to source, `.env.example`, seed data, or Git.
+The command prompts for the new password twice without echoing it and stores only a bcrypt hash. Omit `--username admin` to use the default. Configure Telegram and OTX separately through the dashboard Settings page on each machine. Never commit `instance/diona.db`, a real `.env`, or API credentials.
 
 ## Safe Integration Test Plan
 

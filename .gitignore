@@ -19,3 +19,4 @@ build/
 *.sqlite
 *.sqlite3
 *.db
+!diona-hub/demo_data.db
