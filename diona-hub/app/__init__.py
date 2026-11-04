@@ -1,5 +1,4 @@
 import click
-import shutil
 import sqlite3
 from pathlib import Path
 from flask import Flask, jsonify, request
@@ -17,29 +16,40 @@ def _bootstrap_demo_database(app):
     if not demo_database.is_file():
         return
 
-    should_bootstrap = not local_database.exists()
-    if local_database.exists():
-        try:
-            with sqlite3.connect(local_database) as connection:
-                tables = {
-                    row[0]
-                    for row in connection.execute(
-                        "SELECT name FROM sqlite_master WHERE type = 'table'"
-                    )
-                }
-                should_bootstrap = not any(
-                    connection.execute(f'SELECT 1 FROM "{table}" LIMIT 1').fetchone()
-                    for table in ("alert", "node", "user", "setting")
-                    if table in tables
-                )
-        except sqlite3.Error:
-            app.logger.warning("Could not inspect the local database; demo data was not imported.")
-            return
+    try:
+        with sqlite3.connect(local_database) as connection:
+            if connection.execute("SELECT 1 FROM alert LIMIT 1").fetchone():
+                return
 
-    if should_bootstrap:
-        local_database.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(demo_database, local_database)
-        app.logger.info("Initialized empty local database from sanitized demo data.")
+            connection.execute("ATTACH DATABASE ? AS demo", (str(demo_database),))
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO main.node
+                    (node_name, ip_address, location_room, status, last_heartbeat)
+                SELECT node_name, ip_address, location_room, status, last_heartbeat
+                FROM demo.node
+                """
+            )
+            connection.execute(
+                """
+                INSERT INTO main.alert
+                    (node_id, source_ip, target_ip, attack_type, severity_level,
+                     timestamp, otx_pulse_count, otx_flagged)
+                SELECT local_node.node_id, demo_alert.source_ip, demo_alert.target_ip,
+                       demo_alert.attack_type, demo_alert.severity_level, demo_alert.timestamp,
+                       demo_alert.otx_pulse_count, demo_alert.otx_flagged
+                FROM demo.alert AS demo_alert
+                JOIN demo.node AS demo_node ON demo_node.node_id = demo_alert.node_id
+                JOIN main.node AS local_node ON local_node.node_name = demo_node.node_name
+                """
+            )
+            imported = connection.execute("SELECT COUNT(*) FROM main.alert").fetchone()[0]
+    except sqlite3.Error:
+        app.logger.warning("Could not import sanitized demo data into the local database.")
+        return
+
+    if imported:
+        app.logger.info("Imported %s sanitized demo alerts into the empty local alert history.", imported)
 
 
 def create_app(config_class=Config):
@@ -96,5 +106,6 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
+        _bootstrap_demo_database(app)
 
     return app
