@@ -109,7 +109,7 @@ Implement a small adapter between the chosen Snort event output and the API cont
 
 Dashboard accounts and integration settings live in the hub's local SQLite database (`diona-hub/instance/diona.db` by default). That working database is intentionally excluded from Git because it can contain password hashes and API keys. A fresh clone creates the database tables on startup but does not contain an admin user or old alerts.
 
-The repository includes `diona-hub/demo_data.db`, a sanitized snapshot containing the synthetic demo alerts and node only. To load it on a cloned machine, stop the hub, open PowerShell in `diona-hub/`, and run:
+The repository includes `diona-hub/demo_data.db`, a sanitized snapshot containing the synthetic demo alerts and node only. With the default `sqlite:///diona.db` configuration, the hub copies this snapshot automatically on startup if the local database is missing or has no rows in its alert, node, user, or setting tables. Any database with existing records is left untouched. If you need to restore it manually, stop the hub, open PowerShell in `diona-hub/`, and run:
 
 ```powershell
 New-Item -ItemType Directory -Force .\instance | Out-Null

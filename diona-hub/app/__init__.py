@@ -1,13 +1,52 @@
 import click
+import shutil
+import sqlite3
+from pathlib import Path
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 from app.config import Config
 from app.extensions import db, bcrypt, login_manager, cors
 
 
+def _bootstrap_demo_database(app):
+    if app.config["SQLALCHEMY_DATABASE_URI"] != "sqlite:///diona.db":
+        return
+
+    demo_database = Path(app.root_path).parent / "demo_data.db"
+    local_database = Path(app.instance_path) / "diona.db"
+    if not demo_database.is_file():
+        return
+
+    should_bootstrap = not local_database.exists()
+    if local_database.exists():
+        try:
+            with sqlite3.connect(local_database) as connection:
+                tables = {
+                    row[0]
+                    for row in connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    )
+                }
+                should_bootstrap = not any(
+                    connection.execute(f'SELECT 1 FROM "{table}" LIMIT 1').fetchone()
+                    for table in ("alert", "node", "user", "setting")
+                    if table in tables
+                )
+        except sqlite3.Error:
+            app.logger.warning("Could not inspect the local database; demo data was not imported.")
+            return
+
+    if should_bootstrap:
+        local_database.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(demo_database, local_database)
+        app.logger.info("Initialized empty local database from sanitized demo data.")
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    _bootstrap_demo_database(app)
 
     db.init_app(app)
     bcrypt.init_app(app)
