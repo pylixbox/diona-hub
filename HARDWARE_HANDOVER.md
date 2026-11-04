@@ -105,6 +105,16 @@ Implement a small adapter between the chosen Snort event output and the API cont
 
 `POST /api/alerts` and `POST /api/nodes/heartbeat` currently do not require sensor authentication. This is explicitly a development-phase limitation in the route code. Keep the hub on a trusted, firewalled LAN and do not expose port 5000 to the public Internet. The Flask debug server is for local development only. If the deployment needs to cross an untrusted network, pause and design sensor authentication and transport security before exposing these endpoints; do not invent an incompatible header or silently change the API.
 
+## Dashboard Account Setup
+
+Dashboard accounts live in the hub's local SQLite database (`diona-hub/instance/diona.db` by default), which is intentionally excluded from Git. A fresh clone creates the database tables on startup but does not contain an admin user. To create or reset an account on each machine, activate the hub virtual environment, change to `diona-hub/`, then run:
+
+```powershell
+flask --app run:app set-admin-password --username admin
+```
+
+The command prompts for the new password twice without echoing it and stores only a bcrypt hash. Omit `--username admin` to use the default. Do not add a default password to source, `.env.example`, seed data, or Git.
+
 ## Safe Integration Test Plan
 
 Use an isolated, authorized lab network and synthetic/captured alert records. Do not generate scans or attack traffic against networks without explicit authorization.

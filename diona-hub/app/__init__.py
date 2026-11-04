@@ -1,3 +1,4 @@
+import click
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 from app.config import Config
@@ -21,6 +22,22 @@ def create_app(config_class=Config):
     @login_manager.unauthorized_handler
     def unauthorized():
         return jsonify({"error": "authentication required"}), 401
+
+    @app.cli.command("set-admin-password")
+    @click.option("--username", default="admin", show_default=True)
+    def set_admin_password(username):
+        """Create an account or reset its password using a hidden prompt."""
+        from app.models import User
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            user = User(username=username, role="IT Expert")
+            db.session.add(user)
+
+        password = click.prompt("New password", hide_input=True, confirmation_prompt=True)
+        user.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+        db.session.commit()
+        click.echo(f"Password updated for {username}.")
 
     @app.errorhandler(Exception)
     def handle_unexpected(err):
