@@ -11,7 +11,7 @@ import { SeverityChart, TrendChart } from '../components/Charts'
 import { api } from '../api/client'
 import { formatPhilippinesClock } from '../utils/time'
 
-const POLL_MS = 5000
+const POLL_MS = 3000
 const EMPTY_STATS = {
   total: 0,
   prev_total: 0,

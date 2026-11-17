@@ -5,18 +5,18 @@ from app.extensions import db
 from app.models import Alert, Node
 from app.services import otx, telegram
 from app.services.settings_store import get_setting
+from app.routes.node_auth import node_api_key_required
 
 bp = Blueprint("alerts", __name__, url_prefix="/api/alerts")
 
 
 @bp.route("", methods=["POST"])
+@node_api_key_required
 def ingest_alert():
     """
-    FR-02 / FR-04 ingestion endpoint. Called by eve_shipper.py (or the
-    Chapter 3 simulator during the transition period). Not gated by
-    @login_required - Observer nodes aren't logged-in dashboard users.
-    Add a shared node API key before real deployment; left open for
-    the dev/VM phase.
+    FR-02 / FR-04 ingestion endpoint. Called by diona_shipper.py (or the
+    Chapter 3 simulator during the transition period). Observer nodes
+    authenticate with the shared NODE_API_KEY Bearer token.
     """
     data = request.get_json(silent=True)
     if not data:

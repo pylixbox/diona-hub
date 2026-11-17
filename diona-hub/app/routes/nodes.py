@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, current_app, request
 from flask_login import login_required
 from app.extensions import db
 from app.models import Node
+from app.routes.node_auth import node_api_key_required
 
 bp = Blueprint("nodes", __name__, url_prefix="/api/nodes")
 
@@ -41,12 +42,12 @@ def list_nodes():
 
 
 @bp.route("/heartbeat", methods=["POST"])
+@node_api_key_required
 def heartbeat():
     """
-    Called by each observer node every ~30s (eve_shipper.py does this
-    automatically). Not gated by @login_required - sensors aren't
-    dashboard users. Add a shared node key before real deployment, same
-    as the alert ingestion route.
+    Called by each observer node every 20 seconds (diona_shipper.py does this
+    automatically). Observer nodes authenticate with the shared
+    NODE_API_KEY Bearer token.
     """
     data = request.get_json(silent=True) or {}
     name = data.get("node_name")

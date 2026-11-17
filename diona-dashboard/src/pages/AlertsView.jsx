@@ -34,7 +34,7 @@ export default function AlertsView() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 5000)
+    const id = setInterval(load, 3000)
     return () => clearInterval(id)
   }, [load])
 

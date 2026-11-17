@@ -1,55 +1,8 @@
 import click
-import sqlite3
-from pathlib import Path
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 from app.config import Config
 from app.extensions import db, bcrypt, login_manager, cors
-
-
-def _bootstrap_demo_database(app):
-    if app.config["SQLALCHEMY_DATABASE_URI"] != "sqlite:///diona.db":
-        return
-
-    demo_database = Path(app.root_path).parent / "demo_data.db"
-    local_database = Path(app.instance_path) / "diona.db"
-    if not demo_database.is_file():
-        return
-
-    try:
-        with sqlite3.connect(local_database) as connection:
-            if connection.execute("SELECT 1 FROM alert LIMIT 1").fetchone():
-                return
-
-            connection.execute("ATTACH DATABASE ? AS demo", (str(demo_database),))
-            connection.execute(
-                """
-                INSERT OR IGNORE INTO main.node
-                    (node_name, ip_address, location_room, status, last_heartbeat)
-                SELECT node_name, ip_address, location_room, status, last_heartbeat
-                FROM demo.node
-                """
-            )
-            connection.execute(
-                """
-                INSERT INTO main.alert
-                    (node_id, source_ip, target_ip, attack_type, severity_level,
-                     timestamp, otx_pulse_count, otx_flagged)
-                SELECT local_node.node_id, demo_alert.source_ip, demo_alert.target_ip,
-                       demo_alert.attack_type, demo_alert.severity_level, demo_alert.timestamp,
-                       demo_alert.otx_pulse_count, demo_alert.otx_flagged
-                FROM demo.alert AS demo_alert
-                JOIN demo.node AS demo_node ON demo_node.node_id = demo_alert.node_id
-                JOIN main.node AS local_node ON local_node.node_name = demo_node.node_name
-                """
-            )
-            imported = connection.execute("SELECT COUNT(*) FROM main.alert").fetchone()[0]
-    except sqlite3.Error:
-        app.logger.warning("Could not import sanitized demo data into the local database.")
-        return
-
-    if imported:
-        app.logger.info("Imported %s sanitized demo alerts into the empty local alert history.", imported)
 
 
 def create_app(config_class=Config):
@@ -104,6 +57,5 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
-        _bootstrap_demo_database(app)
 
     return app
