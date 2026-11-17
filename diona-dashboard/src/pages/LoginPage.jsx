@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Eye, EyeOff, Globe, Lock, Radio, Send, ShieldAlert, User } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, Lock, Radio, Send, ShieldAlert, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import Logo from '../components/Logo'
 import HoneycombBackdrop from '../components/HoneycombBackdrop'
@@ -24,11 +24,6 @@ const FEATURES = [
     icon: Send,
     title: 'Real-time alerting',
     text: 'Telegram push notifications reach IT staff the moment a threat is detected.',
-  },
-  {
-    icon: Globe,
-    title: 'Threat-intel enrichment',
-    text: 'Source IPs are checked against AlienVault OTX for known-bad reputation.',
   },
 ]
 

@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required
 from app.extensions import db
 from app.models import Alert, Node
-from app.services import otx, telegram
+from app.services import telegram
 from app.services.settings_store import get_setting
 from app.routes.node_auth import node_api_key_required
 
@@ -52,14 +52,6 @@ def ingest_alert():
         except ValueError:
             pass
 
-    enrichment = otx.enrich_ip(
-        data["source_ip"],
-        api_key=get_setting("otx_api_key", current_app.config["OTX_API_KEY"]),
-    )
-    if enrichment:
-        alert.otx_pulse_count = enrichment["otx_pulse_count"]
-        alert.otx_flagged = enrichment["otx_flagged"]
-
     db.session.add(alert)
     db.session.commit()
 
@@ -102,24 +94,3 @@ def list_alerts():
         "pages": paginated.pages,
         "total": paginated.total,
     })
-
-
-@bp.route("/<int:alert_id>/enrich", methods=["POST"])
-@login_required
-def enrich_alert(alert_id):
-    alert = db.session.get(Alert, alert_id)
-    if not alert:
-        return jsonify({"error": "alert not found"}), 404
-
-    api_key = get_setting("otx_api_key", current_app.config["OTX_API_KEY"])
-    if not api_key:
-        return jsonify({"error": "OTX API key is not configured. Add it in Settings and try again."}), 400
-
-    enrichment, error = otx.enrich_ip_detailed(alert.source_ip, api_key=api_key)
-    if not enrichment:
-        return jsonify({"error": error}), 502
-
-    alert.otx_pulse_count = enrichment["otx_pulse_count"]
-    alert.otx_flagged = enrichment["otx_flagged"]
-    db.session.commit()
-    return jsonify(alert.to_dict())

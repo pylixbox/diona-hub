@@ -1,1 +1,1 @@
-"""DIONA business-logic services: Telegram alerting and OTX enrichment."""
+"""DIONA business-logic services."""

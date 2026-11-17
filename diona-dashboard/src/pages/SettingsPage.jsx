@@ -3,7 +3,7 @@ import PageHeader from '../components/PageHeader'
 import Reveal from '../components/Reveal'
 import { api } from '../api/client'
 
-const EMPTY_FORM = { telegram_bot_token: '', telegram_chat_id: '', otx_api_key: '' }
+const EMPTY_FORM = { telegram_bot_token: '', telegram_chat_id: '' }
 const INPUT =
   'w-full border border-line bg-obsidian px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-amber focus:outline-none'
 
@@ -12,7 +12,6 @@ export default function SettingsPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [status, setStatus] = useState('')
   const [testStatus, setTestStatus] = useState(null)
-  const [otxTestStatus, setOtxTestStatus] = useState(null)
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {})
@@ -42,22 +41,13 @@ export default function SettingsPage() {
     }
   }
 
-  const handleTestOtx = async () => {
-    setOtxTestStatus({ checking: true })
-    try {
-      setOtxTestStatus(await api.testOtx())
-    } catch (err) {
-      setOtxTestStatus({ error: err.message || 'OTX test failed.' })
-    }
-  }
-
   const current = (key) =>
     settings?.[key]?.configured ? <span className="ml-2 text-online">currently {settings[key].masked}</span> : null
 
   return (
     <>
       <Reveal>
-        <PageHeader crumb="Settings" title="Settings" subtitle="Notification and threat-intel configuration" />
+        <PageHeader crumb="Settings" title="Settings" subtitle="Notification configuration" />
       </Reveal>
 
       <Reveal delay={60}>
@@ -83,38 +73,6 @@ export default function SettingsPage() {
               placeholder={settings?.telegram_chat_id?.configured ? 'Leave blank to keep current chat ID' : '-100123456789'}
               className={INPUT}
             />
-          </div>
-
-          <div className="border-t border-line pt-4">
-            <h2 className="mb-1 text-sm font-medium text-ink">OTX threat intelligence</h2>
-            <p className="mb-3 text-xs text-muted">
-              Free key from <span className="font-mono text-amber">otx.alienvault.com</span> under account settings.
-              Enrichment just skips itself without one - nothing else breaks.
-            </p>
-            <label className="mb-1 block text-xs text-muted">API key{current('otx_api_key')}</label>
-            <input
-              value={form.otx_api_key}
-              onChange={(e) => setForm({ ...form, otx_api_key: e.target.value })}
-              placeholder={settings?.otx_api_key?.configured ? 'Leave blank to keep current key' : 'your OTX API key'}
-              className={INPUT}
-            />
-            <p className="mt-2 text-xs text-muted">
-              Test uses public IP 8.8.8.8. A successful lookup with zero pulses still confirms the key works.
-            </p>
-            <button
-              type="button"
-              onClick={handleTestOtx}
-              disabled={otxTestStatus?.checking}
-              className="mt-3 border border-line px-3 py-1.5 text-xs text-inkSoft transition-colors hover:border-amber hover:text-amber disabled:cursor-wait disabled:opacity-50"
-            >
-              {otxTestStatus?.checking ? 'Checking OTX…' : 'Test OTX connection'}
-            </button>
-            {otxTestStatus?.pulse_count != null && (
-              <p role="status" className="mt-2 text-xs text-online">
-                OTX connection verified. {otxTestStatus.pulse_count} pulse(s) found for {otxTestStatus.test_ip}.
-              </p>
-            )}
-            {otxTestStatus?.error && <p role="alert" className="mt-2 text-xs text-severityHigh">{otxTestStatus.error}</p>}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">

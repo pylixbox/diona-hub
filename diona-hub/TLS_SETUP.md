@@ -17,27 +17,59 @@ The script creates `certs/ca.crt`, `certs/ca.key`, `certs/server.crt`, and
 certificate has `CN=diona-hub`. Keep both private keys secret; `certs/` is
 git-ignored.
 
-Set `TLS_ENABLED=true` in the hub environment (or `.env`) and start the hub
-with `python run.py`. It will serve HTTPS on port 5001. Without that setting,
-the development server continues to use HTTP on port 5000.
+The hub defaults to `DIONA_HOST=127.0.0.1` with debug mode disabled, so it is
+reachable only from the Windows PC. For Pi access, set `DIONA_HOST` to the
+hub's testbed IP address and `TLS_ENABLED=true` in the hub environment (or
+`.env`), then start the hub with `python run.py`. It will serve HTTPS on port
+5001. Binding to a non-loopback address without TLS is refused.
+
+## Windows firewall
+
+On the Windows hub, create a narrow inbound rule from an elevated PowerShell.
+Replace the example address strings with the current hub Wi-Fi IP and Pi IPs.
+Include the hub IP as a remote address for the local dashboard proxy:
+
+```powershell
+$HubIP = '192.168.15.177'
+$PiIPs = @('192.168.15.49', '192.168.15.208')
+New-NetFirewallRule -DisplayName 'DIONA Hub HTTPS from Pi Nodes' `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5001 `
+  -LocalAddress $HubIP -RemoteAddress ($PiIPs + $HubIP) -Profile Public
+```
+
+The rule is restricted to the hub address, the node addresses, and TCP port
+5001. Update it if the hotspot assigns different addresses.
+
+## Local dashboard
+
+The Vite dev server listens on `127.0.0.1` and proxies `/api` to the HTTPS hub,
+validating it with the local CA. In the dashboard's ignored `.env.local`, set:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:5173
+DIONA_HUB_URL=https://<hub-wifi-ip>:5001
+DIONA_CA_CERT_PATH=..\diona-hub\certs\ca.crt
+```
 
 ## Configure Raspberry Pi nodes
 
-Securely copy **only** `certs/ca.crt` to each Pi, for example:
+Copy the shipper script and **only** the CA certificate to each Pi, for example:
 
 ```sh
-scp certs/ca.crt pi@<node>:/home/pi/diona/ca.crt
+scp diona_shipper.py certs/ca.crt pi@<node>:/home/pi/
 ```
 
 Do not copy `ca.key` or `server.key` to a node. Set the Pi's `config.json` to
-use the HTTPS URL and the CA certificate:
+use the HTTPS URL and the CA certificate. Keep `config.json` beside
+`diona_shipper.py`; `ca_cert` can be an absolute path or a path relative to
+that directory:
 
 ```json
 {
   "hub_ip": "https://192.168.1.10:5001",
   "node_name": "diona-pi-01",
   "api_key": "<same value as the hub's NODE_API_KEY>",
-  "ca_cert": "/home/pi/diona/ca.crt"
+  "ca_cert": "/home/pi/ca.crt"
 }
 ```
 

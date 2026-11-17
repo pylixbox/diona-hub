@@ -5,9 +5,6 @@ SEVERITY_EMOJI = {"High": "\U0001F534", "Medium": "\U0001F7E0", "Low": "\U0001F7
 
 def _build_text(alert):
     emoji = SEVERITY_EMOJI.get(alert.get("severity_level"), "\u26AA")
-    otx_line = ""
-    if alert.get("otx_flagged"):
-        otx_line = f"\n\U0001F6E1 OTX: seen in {alert.get('otx_pulse_count')} threat pulse(s)"
 
     return (
         f"{emoji} *DIONA Alert - {alert.get('severity_level', 'Unknown')}*\n"
@@ -15,7 +12,6 @@ def _build_text(alert):
         f"Type: {alert.get('attack_type')}\n"
         f"Source: `{alert.get('source_ip')}` -> Target: `{alert.get('target_ip')}`\n"
         f"Time: {alert.get('timestamp')}"
-        f"{otx_line}"
     )
 
 

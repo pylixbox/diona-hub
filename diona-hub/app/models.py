@@ -45,12 +45,6 @@ class Alert(db.Model):
     severity_level = db.Column(db.String(16), default="Medium")
     timestamp = db.Column(db.DateTime, default=utcnow)
 
-    # Extension beyond the approved ERD (Figure 3-7) for OTX enrichment.
-    # Flag this as an added column in Chapter 4, or fold it into an
-    # updated ERD before the panel sees it.
-    otx_pulse_count = db.Column(db.Integer, nullable=True)
-    otx_flagged = db.Column(db.Boolean, default=False)
-
     def to_dict(self):
         return {
             "alert_id": self.alert_id,
@@ -61,17 +55,13 @@ class Alert(db.Model):
             "attack_type": self.attack_type,
             "severity_level": self.severity_level,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
-            "otx_pulse_count": self.otx_pulse_count,
-            "otx_flagged": self.otx_flagged,
         }
 
 
 class Setting(db.Model):
     """
     UI-configurable overrides for values that would otherwise only
-    live in .env (Telegram token/chat ID, OTX key). Not part of the
-    approved ERD - a new table, not just new columns, so it needs its
-    own mention in Chapter 4 alongside the Alert table's OTX columns.
+    live in .env (Telegram token/chat ID).
     """
     __tablename__ = "setting"
 

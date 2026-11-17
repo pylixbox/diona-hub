@@ -48,13 +48,6 @@ def summary():
         .scalar()
         or 0
     )
-    otx_flagged = (
-        db.session.query(func.count(Alert.alert_id))
-        .filter(Alert.timestamp >= since, Alert.otx_flagged.is_(True))
-        .scalar()
-        or 0
-    )
-
     # Bucket timestamps by Philippine calendar date for the dashboard trend.
     raw = (
         db.session.query(Alert.timestamp, Alert.severity_level)
@@ -86,7 +79,6 @@ def summary():
         "total": total,
         "prev_total": prev_total,
         "unique_sources": unique_sources,
-        "otx_flagged": otx_flagged,
         "by_attack_type": [{"attack_type": t, "count": c} for t, c in by_type],
         "by_severity": [{"severity": s, "count": c} for s, c in by_severity],
         "by_day": by_day,

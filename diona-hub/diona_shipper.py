@@ -3,7 +3,7 @@ Forward Snort JSON alerts and heartbeats to the DIONA hub.
 
 Place config.json beside this script:
 {
-  "hub_ip": "192.168.1.10",
+  "hub_ip": "https://192.168.15.177:5001",
   "node_name": "diona-pi-01",
   "api_key": "the same value as NODE_API_KEY on the hub",
   "ca_cert": "/home/pi/diona/ca.crt"
@@ -19,6 +19,7 @@ import logging
 import os
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -110,6 +111,23 @@ def _severity_label(value):
     return labels.get(str(value).strip().lower(), "Medium")
 
 
+def _normalize_timestamp(value):
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).isoformat()
+    except ValueError:
+        pass
+
+    year = datetime.now().year
+    for timestamp_format in ("%m/%d-%H:%M:%S.%f", "%m/%d-%H:%M:%S"):
+        try:
+            parsed = datetime.strptime(f"{year}/{value}", f"%Y/{timestamp_format}")
+            return parsed.isoformat()
+        except ValueError:
+            continue
+
+    raise ValueError(f"Unsupported timestamp format: {value!r}")
+
+
 def build_alert_payload(event, node_name):
     """Translate a Snort alert event into the Flask alert-ingestion schema."""
     if event.get("event_type") not in (None, "alert"):
@@ -119,28 +137,42 @@ def build_alert_payload(event, node_name):
     if not isinstance(snort_alert, dict):
         snort_alert = {}
 
-    source_ip = event.get("src_ip") or event.get("source_ip")
-    target_ip = event.get("dest_ip") or event.get("dst_ip") or event.get("target_ip")
+    source_ip = event.get("src_ip") or event.get("source_ip") or event.get("src_addr")
+    target_ip = (
+        event.get("dest_ip")
+        or event.get("dst_ip")
+        or event.get("target_ip")
+        or event.get("dst_addr")
+    )
     attack_type = (
         snort_alert.get("signature")
         or event.get("attack_type")
         or event.get("signature")
+        or event.get("msg")
+        or event.get("rule")
     )
     if not source_ip or not attack_type:
         raise ValueError("Snort alert is missing a source IP or signature.")
 
+    severity = (
+        event.get("severity_level")
+        or snort_alert.get("severity")
+        or event.get("severity")
+        or event.get("priority")
+    )
     payload = {
         "node_name": node_name,
         "source_ip": source_ip,
         "attack_type": attack_type,
-        "severity_level": _severity_label(
-            event.get("severity_level", snort_alert.get("severity", event.get("severity")))
-        ),
+        "severity_level": _severity_label(severity),
     }
     if target_ip:
         payload["target_ip"] = target_ip
     if isinstance(event.get("timestamp"), str):
-        payload["timestamp"] = event["timestamp"]
+        try:
+            payload["timestamp"] = _normalize_timestamp(event["timestamp"])
+        except ValueError as exc:
+            logger.warning("Ignoring unsupported Snort timestamp: %s", exc)
     return payload
 
 

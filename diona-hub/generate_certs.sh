@@ -49,6 +49,10 @@ $HUB_SAN
 EOF
 
 openssl genrsa -out "$CERT_DIR/ca.key" 4096
+
+# Prevent Git Bash from converting OpenSSL's /CN= subjects into Windows paths.
+export MSYS2_ARG_CONV_EXCL="${MSYS2_ARG_CONV_EXCL:+$MSYS2_ARG_CONV_EXCL;}/CN="
+
 openssl req -x509 -new -key "$CERT_DIR/ca.key" -sha256 -days 365 \
     -out "$CERT_DIR/ca.crt" \
     -subj "/CN=DIONA Testbed CA" \

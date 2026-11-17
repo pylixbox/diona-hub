@@ -12,7 +12,6 @@ class Config:
     TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
-    OTX_API_KEY = os.environ.get("OTX_API_KEY", "")
     NODE_API_KEY = os.environ.get("NODE_API_KEY", "")
 
     # A node that hasn't sent an alert/heartbeat within this window is

@@ -9,12 +9,6 @@ const STRIPE = {
 }
 const ruleLabel = (t) => (t || '').replace(/^DIONA (Possible )?/, '')
 
-function Intel({ alert }) {
-  if (alert.otx_pulse_count == null) return <span className="text-muted/70">not checked</span>
-  if (alert.otx_flagged) return <span className="text-severityHigh">● {alert.otx_pulse_count} pulses</span>
-  return <span className="text-muted">no match</span>
-}
-
 export default function AlertsTable({
   alerts,
   title = 'Alert log',
@@ -35,7 +29,6 @@ export default function AlertsTable({
               <th className="px-4 py-2 font-medium">Detection</th>
               <th className="px-4 py-2 font-medium">Source → Target</th>
               <th className="px-4 py-2 font-medium">Severity</th>
-              <th className="px-4 py-2 font-medium">Intel</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -67,14 +60,11 @@ export default function AlertsTable({
                 <td className="px-4 py-2.5">
                   <SeverityBadge level={a.severity_level} />
                 </td>
-                <td className="px-4 py-2.5 text-xs">
-                  <Intel alert={a} />
-                </td>
               </tr>
             ))}
             {alerts.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-[13px] text-muted">
+                <td colSpan={4} className="px-4 py-8 text-center text-[13px] text-muted">
                   {emptyText}
                 </td>
               </tr>

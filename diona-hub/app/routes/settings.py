@@ -1,14 +1,13 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required
 from app.services.settings_store import get_setting, set_setting
-from app.services import otx, telegram
+from app.services import telegram
 
 bp = Blueprint("settings", __name__, url_prefix="/api/settings")
 
 KEYS = {
     "telegram_bot_token": "TELEGRAM_BOT_TOKEN",
     "telegram_chat_id": "TELEGRAM_CHAT_ID",
-    "otx_api_key": "OTX_API_KEY",
 }
 
 # Most specific first ("chat not found" must be checked before "not found").
@@ -70,22 +69,3 @@ def test_telegram():
 
     hint = next((h for needle, h in HINTS if needle in detail.lower()), "")
     return jsonify({"error": f"Telegram said: {detail}. {hint}".strip()}), 400
-
-
-@bp.route("/test-otx", methods=["POST"])
-@login_required
-def test_otx():
-    api_key = get_setting("otx_api_key", current_app.config["OTX_API_KEY"])
-    if not api_key:
-        return jsonify({"error": "OTX API key is not configured. Save it in Settings first."}), 400
-
-    test_ip = "8.8.8.8"
-    enrichment, error = otx.enrich_ip_detailed(test_ip, api_key=api_key)
-    if not enrichment:
-        return jsonify({"error": error}), 502
-
-    return jsonify({
-        "ok": True,
-        "test_ip": test_ip,
-        "pulse_count": enrichment["otx_pulse_count"],
-    })

@@ -61,7 +61,7 @@ export default function AlertsView() {
         p += 1
       } while (p <= pages && rows.length < 2000)
       downloadCsv(`diona-alerts-${formatPhilippinesDate(new Date())}.csv`, [
-        ['timestamp_pht', 'node', 'detection', 'source_ip', 'target_ip', 'severity', 'otx_pulses'],
+        ['timestamp_pht', 'node', 'detection', 'source_ip', 'target_ip', 'severity'],
         ...rows.map((a) => [
           formatPhilippinesTimestamp(a.timestamp),
           a.node_name,
@@ -69,7 +69,6 @@ export default function AlertsView() {
           a.source_ip,
           a.target_ip,
           a.severity_level,
-          a.otx_pulse_count,
         ]),
       ])
     } finally {

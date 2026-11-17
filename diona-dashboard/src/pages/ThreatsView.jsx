@@ -12,7 +12,6 @@ const EMPTY_STATS = {
   total: 0,
   prev_total: 0,
   unique_sources: 0,
-  otx_flagged: 0,
   by_severity: [],
   by_day: [],
   by_attack_type: [],

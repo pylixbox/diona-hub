@@ -54,10 +54,9 @@ export default function KpiStrip({ stats, nodes, days = 7 }) {
   const high = (stats.by_severity || []).find((s) => s.severity === 'High')?.count ?? 0
   const online = nodes.filter((n) => n.status === 'online').length
   const allUp = nodes.length > 0 && online === nodes.length
-  const otx = stats.otx_flagged ?? 0
 
   return (
-    <div className="grid grid-cols-2 divide-x divide-line border border-line border-t-2 border-t-amber bg-panel/70 md:grid-cols-5">
+    <div className="grid grid-cols-2 divide-x divide-line border border-line border-t-2 border-t-amber bg-panel/70 md:grid-cols-4">
       <Cell label={`Alerts · ${days}d`} value={total} foot={<Delta now={total} prev={stats.prev_total} days={days} />} />
       <Cell
         label="High severity"
@@ -66,12 +65,6 @@ export default function KpiStrip({ stats, nodes, days = 7 }) {
         foot={total ? `${Math.round((high / total) * 100)}% of all alerts` : 'no alerts yet'}
       />
       <Cell label="Unique sources" value={stats.unique_sources ?? 0} foot="distinct source IPs" />
-      <Cell
-        label="OTX matches"
-        value={otx}
-        tone={otx > 0 ? 'text-severityMedium' : 'text-ink'}
-        foot="seen in threat-intel pulses"
-      />
       <Cell
         label="Nodes online"
         value={`${online}/${nodes.length}`}
