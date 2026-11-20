@@ -1,0 +1,1 @@
+sudo /usr/local/bin/snort -c /usr/local/etc/snort/snort.lua -R /home/diona4/diona_test.rules -i wlan0 -A alert_json -l /var/log/snort --lua alert_json = { file = true, fields = "timestamp src_addr dst_addr msg priority rule action proto" }
