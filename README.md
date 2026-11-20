@@ -1,0 +1,1 @@
+Portions of the backend routing and Snort rule generation were co-produced with the assistance of GitHub Copilot and Qwen AI, and subsequently reviewed, tested, and integrated by the development team."
